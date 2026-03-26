@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classificateur d'Images - Deep Learning</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .drop-zone {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .drop-zone:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+            transform: translateY(-2px);
+        }
+
+        .drop-zone.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .drop-zone-icon {
+            font-size: 3em;
+            opacity: 0.6;
+        }
+
+        .drop-zone-text {
+            color: #333;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .drop-zone-subtext {
+            color: #999;
+            font-size: 0.95em;
+            margin-top: 5px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .image-preview {
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            max-height: 400px;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .image-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .image-info strong {
+            color: #333;
+        }
+
+        .results-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .results-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .results-container.empty {
+            color: #999;
+        }
+
+        .results-container.empty-text {
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .result-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-rank {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            line-height: 30px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-class {
+            text-align: left;
+            flex: 1;
+            color: #333;
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .result-percentage {
+            font-weight: 700;
+            color: #667eea;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .result-item:nth-child(1) {
+            border-left-color: #ffd700;
+        }
+
+        .result-item:nth-child(1) .progress-bar {
+            background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+        }
+
+        .result-item:nth-child(2) {
+            border-left-color: #c0c0c0;
+        }
+
+        .result-item:nth-child(2) .progress-bar {
+            background: linear-gradient(90deg, #c0c0c0 0%, #e8e8e8 100%);
+        }
+
+        .result-item:nth-child(3) {
+            border-left-color: #cd7f32;
+        }
+
+        .result-item:nth-child(3) .progress-bar {
+            background: linear-gradient(90deg, #cd7f32 0%, #e6a352 100%);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f0f2ff;
+            color: #667eea;
+            border: 1px solid #667eea;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            color: #667eea;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #c33;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3c3;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .status-loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-item {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        .result-item:nth-child(1) { animation-delay: 0s; }
+        .result-item:nth-child(2) { animation-delay: 0.1s; }
+        .result-item:nth-child(3) { animation-delay: 0.2s; }
+        .result-item:nth-child(4) { animation-delay: 0.3s; }
+        .result-item:nth-child(5) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖼️ Classificateur d'Images</h1>
+            <p>Classifiez vos images avec Deep Learning - MobileNetV2 + ImageNet</p>
+        </div>
+
+        <div class="content">
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-icon">📤</div>
+                    <div class="drop-zone-text">Glissez une image ici</div>
+                    <div class="drop-zone-subtext">ou cliquez pour sélectionner</div>
+                </div>
+                <input type="file" id="fileInput" accept="image/*">
+
+                <div id="previewContainer" style="display: none;">
+                    <div class="image-preview">
+                        <img id="imagePreview" alt="Aperçu">
+                    </div>
+                    <div class="image-info">
+                        <div><strong>Fichier :</strong> <span id="fileName">-</span></div>
+                        <div><strong>Taille :</strong> <span id="fileSize">-</span></div>
+                        <div><strong>Dimensions :</strong> <span id="imageDim">-</span></div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="classifyBtn" disabled>
+                        Classifier
+                    </button>
+                    <button class="btn btn-secondary" id="clearBtn" style="display: none;">
+                        Réinitialiser
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section">
+                <div class="results-container empty" id="resultsContainer">
+                    <div class="empty-text">📊 Les résultats s'afficheront ici</div>
+                    <p style="margin-top: 10px; color: #ccc; font-size: 0.9em;">
+                        Chargez une image et cliquez sur "Classifier"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = 'http://localhost:8000';
+        const DROP_ZONE = document.getElementById('dropZone');
+        const FILE_INPUT = document.getElementById('fileInput');
+        const PREVIEW_CONTAINER = document.getElementById('previewContainer');
+        const IMAGE_PREVIEW = document.getElementById('imagePreview');
+        const CLASSIFY_BTN = document.getElementById('classifyBtn');
+        const CLEAR_BTN = document.getElementById('clearBtn');
+        const RESULTS_CONTAINER = document.getElementById('resultsContainer');
+
+        let currentFile = null;
+        let currentImage = null;
+
+        // === Event Listeners ===
+
+        DROP_ZONE.addEventListener('click', () => FILE_INPUT.click());
+
+        DROP_ZONE.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            DROP_ZONE.classList.add('dragover');
+        });
+
+        DROP_ZONE.addEventListener('dragleave', () => {
+            DROP_ZONE.classList.remove('dragover');
+        });
+
+        DROP_ZONE.addEventListener('drop', (e) => {
+            e.preventDefault();
+            DROP_ZONE.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        FILE_INPUT.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        CLASSIFY_BTN.addEventListener('click', classifyImage);
+        CLEAR_BTN.addEventListener('click', clearForm);
+
+        // === File Handling ===
+
+        function handleFileSelect(file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showError('Veuillez sélectionner une image valide (JPEG, PNG, WebP, GIF)');
+                return;
+            }
+
+            // Validate file size (10 MB max)
+            const maxSize = 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showError('La taille de l\'image dépasse 10 MB. Veuillez compresser votre image.');
+                return;
+            }
+
+            currentFile = file;
+
+            // Display file info
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+
+            // Load and preview image
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
+                    document.getElementById('imageDim').textContent = `${img.width} × ${img.height} px`;
+                    IMAGE_PREVIEW.src = e.target.result;
+                    PREVIEW_CONTAINER.style.display = 'block';
+                    DROP_ZONE.style.display = 'none';
+                    CLASSIFY_BTN.disabled = false;
+                    CLEAR_BTN.style.display = 'block';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearForm() {
+            currentFile = null;
+            currentImage = null;
+            FILE_INPUT.value = '';
+            PREVIEW_CONTAINER.style.display = 'none';
+            DROP_ZONE.style.display = 'flex';
+            CLASSIFY_BTN.disabled = true;
+            CLEAR_BTN.style.display = 'none';
+            RESULTS_CONTAINER.innerHTML = '<div class="empty-text">📊 Les résultats s\'afficheront ici</div><p style="margin-top: 10px; color: #ccc; font-size: 0.9em;">Chargez une image et cliquez sur "Classifier"</p>';
+            RESULTS_CONTAINER.classList.add('empty');
+        }
+
+        // === Classification ===
+
+        async function classifyImage() {
+            if (!currentFile) {
+                showError('Veuillez d\'abord sélectionner une image');
+                return;
+            }
+
+            CLASSIFY_BTN.disabled = true;
+            showLoading();
+
+            try {
+                // Create FormData
+                const formData = new FormData();
+                formData.append('file', currentFile);
+
+                // Send request
+                const response = await fetch(`${API_URL}/predict`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Erreur serveur');
+                }
+
+                const data = await response.json();
+                displayResults(data.predictions);
+            } catch (error) {
+                showError(`Erreur de classification : ${error.message}`);
+                console.error('Classification error:', error);
+            } finally {
+                CLASSIFY_BTN.disabled = false;
+            }
+        }
+
+        function displayResults(predictions) {
+            RESULTS_CONTAINER.classList.remove('empty');
+            RESULTS_CONTAINER.innerHTML = '';
+
+            if (!predictions || predictions.length === 0) {
+                showError('Aucune prédiction reçue');
+                return;
+            }
+
+            const resultsList = document.createElement('div');
+            resultsList.className = 'results-list';
+
+            predictions.forEach((pred, index) => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+
+                const rank = index + 1;
+                const percentage = (pred.probability * 100).toFixed(1);
+
+                resultItem.innerHTML = `
+                    <div class="result-header">
+                        <span class="result-rank">${rank}</span>
+                        <span class="result-class">${formatClassName(pred.class)}</span>
+                        <span class="result-percentage">${percentage}%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: 0%"></div>
+                    </div>
+                `;
+
+                resultsList.appendChild(resultItem);
+
+                // Animate progress bar
+                setTimeout(() => {
+                    const progressBar = resultItem.querySelector('.progress-bar');
+                    progressBar.style.width = `${percentage}%`;
+                }, 50);
+            });
+
+            RESULTS_CONTAINER.appendChild(resultsList);
+        }
+
+        function showLoading() {
+            RESULTS_CONTAINER.classList.remove('empty');
+            RESULTS_CONTAINER.innerHTML = `
+                <div class="loading-text">
+                    <div class="loading-spinner"></div>
+                    <div>Classification en cours...</div>
+                    <p style="font-size: 0.85em; color: #999; margin-top: 10px;">
+                        Veuillez patienter pendant que le modèle analyse votre image
+                    </p>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            RESULTS_CONTAINER.innerHTML = `<div class="error-message">⚠️ ${message}</div>`;
+            RESULTS_CONTAINER.classList.remove('empty');
+        }
+
+        // === Utilities ===
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function formatClassName(className) {
+            // Convert snake_case or underscore to readable format
+            return className
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        // === Startup ===
+
+        async function checkBackendHealth() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                console.log('Backend health:', data);
+                if (data.status === 'loading') {
+                    console.log('Model is still loading...');
+                    setTimeout(checkBackendHealth, 2000);
+                }
+            } catch (error) {
+                console.error('Backend health check failed:', error);
+                setTimeout(checkBackendHealth, 3000);
+            }
+        }
+
+        // Check backend on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkBackendHealth();
+        });
+    </script>
+</body>
+</html>

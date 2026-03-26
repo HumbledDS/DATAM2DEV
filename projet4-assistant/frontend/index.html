@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant IA Multi-Provider</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-claude: #9D6D3E;
+            --color-chatgpt: #10A37F;
+            --color-grok: #2E2E2E;
+            --color-deepseek: #1066B4;
+            --color-huggingface: #FFD21E;
+            --color-primary: #1F2937;
+            --color-secondary: #6B7280;
+            --color-border: #E5E7EB;
+            --color-bg: #F9FAFB;
+            --color-white: #FFFFFF;
+            --color-error: #EF4444;
+            --color-success: #10B981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--color-white);
+            border-bottom: 1px solid var(--color-border);
+            padding: 16px 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .provider-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .provider-selector label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--color-secondary);
+        }
+
+        .provider-selector select {
+            padding: 8px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--color-white);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 200px;
+        }
+
+        .provider-selector select:hover {
+            border-color: var(--color-secondary);
+        }
+
+        .provider-selector select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(31, 41, 55, 0.1);
+        }
+
+        /* Main chat area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 24px;
+            gap: 16px;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 8px;
+            scroll-behavior: smooth;
+        }
+
+        .messages-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .messages-area::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        .messages-area::-webkit-scrollbar-thumb:hover {
+            background: var(--color-secondary);
+        }
+
+        /* Message bubbles */
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .message.user .message-bubble {
+            background: var(--color-primary);
+            color: var(--color-white);
+            border-radius: 18px 18px 4px 18px;
+        }
+
+        .message.assistant .message-bubble {
+            background: var(--color-white);
+            color: var(--color-primary);
+            border: 1px solid var(--color-border);
+            border-radius: 18px 18px 18px 4px;
+        }
+
+        .message-meta {
+            font-size: 11px;
+            color: var(--color-secondary);
+            padding: 0 4px;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        /* Provider badge in message */
+        .provider-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            width: fit-content;
+        }
+
+        .provider-badge.claude {
+            background: rgba(157, 109, 62, 0.1);
+            color: var(--color-claude);
+        }
+
+        .provider-badge.chatgpt {
+            background: rgba(16, 163, 127, 0.1);
+            color: var(--color-chatgpt);
+        }
+
+        .provider-badge.grok {
+            background: rgba(46, 46, 46, 0.1);
+            color: var(--color-grok);
+        }
+
+        .provider-badge.deepseek {
+            background: rgba(16, 102, 180, 0.1);
+            color: var(--color-deepseek);
+        }
+
+        .provider-badge.huggingface {
+            background: rgba(255, 210, 30, 0.1);
+            color: #8B7100;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--color-secondary);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                opacity: 0.5;
+                transform: translateY(0);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Error message */
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--color-error);
+            color: var(--color-error);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .error-message::before {
+            content: "⚠️";
+            flex-shrink: 0;
+        }
+
+        /* Input area */
+        .input-area {
+            display: flex;
+            gap: 12px;
+            padding: 16px 0;
+            background: var(--color-white);
+            border-top: 1px solid var(--color-border);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(31, 41, 55, 0.1);
+        }
+
+        .input-wrapper input::placeholder {
+            color: var(--color-secondary);
+        }
+
+        .send-button {
+            padding: 12px 24px;
+            background: var(--color-primary);
+            color: var(--color-white);
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background: #111827;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .send-button:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .send-button::before {
+            content: "→";
+        }
+
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 16px;
+            color: var(--color-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            opacity: 0.5;
+        }
+
+        .empty-state h2 {
+            font-size: 18px;
+            color: var(--color-primary);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .provider-selector {
+                width: 100%;
+            }
+
+            .provider-selector select {
+                width: 100%;
+            }
+
+            .chat-container {
+                padding: 12px;
+            }
+
+            .message-bubble {
+                max-width: 85%;
+            }
+
+            .input-area {
+                flex-direction: column;
+            }
+
+            .send-button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .input-wrapper {
+                flex-direction: column;
+            }
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.connected {
+            background: var(--color-success);
+        }
+
+        .status-indicator.disconnected {
+            background: var(--color-error);
+        }
+
+        /* Loading animation */
+        .sending-state {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div>
+                    <h1> Assistant IA Multi-Provider</h1>
+                </div>
+                <div class="provider-selector">
+                    <label for="provider">Provider:</label>
+                    <select id="provider">
+                        <option value="">-- Sélectionner un provider --</option>
+                        <option value="claude"> Claude (Anthropic)</option>
+                        <option value="chatgpt"> ChatGPT (OpenAI)</option>
+                        <option value="grok"> Grok (X AI)</option>
+                        <option value="deepseek"> DeepSeek</option>
+                        <option value="huggingface"> Hugging Face</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat area -->
+        <div class="chat-container">
+            <div class="messages-area" id="messages">
+                <div class="empty-state">
+                    <div class="empty-state-icon">💬</div>
+                    <h2>Bienvenue!</h2>
+                    <p>Sélectionnez un provider et commencez à chatter</p>
+                </div>
+            </div>
+
+            <!-- Input area -->
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <input
+                        type="text"
+                        id="message-input"
+                        placeholder="Tapez votre message..."
+                        disabled
+                    />
+                    <button class="send-button" id="send-button" disabled>
+                        Envoyer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:8000';
+        const PROVIDERS = {
+            'claude': { color: '#9D6D3E', name: 'Claude' },
+            'chatgpt': { color: '#10A37F', name: 'ChatGPT' },
+            'grok': { color: '#2E2E2E', name: 'Grok' },
+            'deepseek': { color: '#1066B4', name: 'DeepSeek' },
+            'huggingface': { color: '#FFD21E', name: 'Hugging Face' }
+        };
+
+        // État de l'application
+        const appState = {
+            selectedProvider: '',
+            messages: [],
+            isLoading: false,
+            configuredProviders: []
+        };
+
+        // Éléments du DOM
+        const messagesContainer = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const providerSelect = document.getElementById('provider');
+
+        // Initialiser l'application
+        async function init() {
+            // Charger les providers configurés
+            await loadConfiguredProviders();
+
+            // Ajouter les event listeners
+            providerSelect.addEventListener('change', onProviderChange);
+            messageInput.addEventListener('keypress', onMessageKeypress);
+            sendButton.addEventListener('click', onSendMessage);
+        }
+
+        // Charger les providers configurés
+        async function loadConfiguredProviders() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/providers`);
+                const data = await response.json();
+                appState.configuredProviders = data.configured_providers;
+
+                // Mettre à jour le select
+                updateProviderSelect();
+            } catch (error) {
+                console.error('Erreur lors du chargement des providers:', error);
+                showError('Impossible de charger les providers. Vérifiez que le serveur est en cours d\'exécution.');
+            }
+        }
+
+        // Mettre à jour le select des providers
+        function updateProviderSelect() {
+            const options = providerSelect.querySelectorAll('option');
+            options.forEach(option => {
+                if (option.value && !appState.configuredProviders.includes(option.value)) {
+                    option.disabled = true;
+                    option.textContent += ' (Non configuré)';
+                }
+            });
+        }
+
+        // Event: changement de provider
+        function onProviderChange(e) {
+            appState.selectedProvider = e.target.value;
+            messageInput.disabled = !appState.selectedProvider;
+            sendButton.disabled = !appState.selectedProvider;
+
+            if (appState.selectedProvider) {
+                messageInput.focus();
+            }
+        }
+
+        // Event: appui sur Entrée dans l'input
+        function onMessageKeypress(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                onSendMessage();
+            }
+        }
+
+        // Event: envoi du message
+        async function onSendMessage() {
+            const message = messageInput.value.trim();
+
+            if (!message || !appState.selectedProvider) {
+                return;
+            }
+
+            // Ajouter le message utilisateur
+            addMessage(message, 'user', appState.selectedProvider);
+
+            // Vider l'input
+            messageInput.value = '';
+
+            // Afficher l'indicateur de typage
+            showTypingIndicator();
+
+            // Envoyer le message
+            await sendMessageToProvider(message, appState.selectedProvider);
+        }
+
+        // Envoyer le message à l'API
+        async function sendMessageToProvider(message, provider) {
+            try {
+                appState.isLoading = true;
+                sendButton.disabled = true;
+                messageInput.disabled = true;
+
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        provider: provider
+                    })
+                });
+
+                // Retirer l'indicateur de typage
+                removeTypingIndicator();
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `Erreur ${response.status}`);
+                }
+
+                const data = await response.json();
+                addMessage(data.response, 'assistant', provider, data.usage);
+                scrollToBottom();
+
+            } catch (error) {
+                console.error('Erreur lors de l\'envoi du message:', error);
+                removeTypingIndicator();
+                showError(`Erreur: ${error.message}`);
+
+            } finally {
+                appState.isLoading = false;
+                sendButton.disabled = !appState.selectedProvider;
+                messageInput.disabled = !appState.selectedProvider;
+            }
+        }
+
+        // Ajouter un message au chat
+        function addMessage(text, role, provider, usage = null) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${role}`;
+
+            const bubbleElement = document.createElement('div');
+            bubbleElement.className = 'message-bubble';
+            bubbleElement.innerHTML = escapeHtml(text);
+
+            if (role === 'assistant') {
+                const badge = document.createElement('div');
+                badge.className = `provider-badge ${provider}`;
+                badge.textContent = PROVIDERS[provider].name;
+                bubbleElement.appendChild(badge);
+
+                if (usage && (usage.input_tokens > 0 || usage.output_tokens > 0)) {
+                    const usageText = document.createElement('div');
+                    usageText.style.fontSize = '11px';
+                    usageText.style.color = '#9CA3AF';
+                    usageText.style.marginTop = '8px';
+                    usageText.textContent = `Tokens: ${usage.input_tokens} → ${usage.output_tokens}`;
+                    bubbleElement.appendChild(usageText);
+                }
+            }
+
+            messageElement.appendChild(bubbleElement);
+
+            // Ajouter à la liste des messages
+            if (messagesContainer.querySelector('.empty-state')) {
+                messagesContainer.innerHTML = '';
+            }
+
+            messagesContainer.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        // Afficher l'indicateur de typage
+        function showTypingIndicator() {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message assistant';
+            messageElement.id = 'typing-indicator';
+
+            const bubbleElement = document.createElement('div');
+            bubbleElement.className = 'message-bubble';
+
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'typing-dot';
+                bubbleElement.appendChild(dot);
+            }
+
+            messageElement.appendChild(bubbleElement);
+            messagesContainer.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        // Retirer l'indicateur de typage
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        // Afficher une erreur
+        function showError(message) {
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            errorElement.textContent = message;
+            messagesContainer.appendChild(errorElement);
+            scrollToBottom();
+
+            // Auto-remove après 5 secondes
+            setTimeout(() => {
+                errorElement.remove();
+            }, 5000);
+        }
+
+        // Scroller vers le bas
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Échapper les caractères HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Lancer l'application
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
