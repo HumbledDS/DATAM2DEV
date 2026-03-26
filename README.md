@@ -1,2 +1,5 @@
 # DATAM2DEV
-données pour le cours de Data Machine Learning - Deep Learning
+données pour le cours de IA, deep Learning et machine learning
+
+
+Repo cours 

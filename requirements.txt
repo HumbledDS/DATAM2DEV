@@ -4,3 +4,25 @@ matplotlib
 seaborn
 scikit-learn
 
+
+#pytorch
+
+#tensorflow  -- python 3.12
+keras
+scipy
+
+dotenv
+uvicorn
+
+joblib
+typing
+pydantic
+fastapi
+
+
+
+
+
+
+#pip install -r requirements.txt pour installer les bibliothèques
+#conda install --file requirements.txt pour installer les bibliothèques dans un environnement conda

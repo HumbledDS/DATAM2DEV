@@ -1,0 +1,167 @@
+================================================================================
+PROJET 1 — PRÉDICTEUR IRIS
+Projet complet de classification ML avec Frontend-Backend Integration
+================================================================================
+
+STRUCTURE DU PROJET:
+
+projet1-iris/
+│
+├── README.md                           [222 lignes]
+│   └─ Documentation complète (FR) avec instructions et dépannage
+│
+├── docker-compose.yml                  [52 lignes]
+│   └─ Orchestration multi-conteneurs (backend + frontend)
+│
+├── backend/
+│   ├── train_model.py                  [94 lignes]
+│   │   └─ Script d'entraînement Random Forest + évaluation
+│   │
+│   ├── app.py                          [239 lignes]
+│   │   └─ API FastAPI complète avec /health et /predict
+│   │
+│   ├── requirements.txt
+│   │   └─ Dependencies: fastapi, uvicorn, scikit-learn, joblib, pydantic
+│   │
+│   ├── Dockerfile
+│   │   └─ Build multi-stage (build + runtime)
+│   │
+│   └── iris_model.pkl                  [généré au démarrage]
+│       └─ Modèle entraîné (sérialisé avec joblib)
+│
+└── frontend/
+    ├── index.html                      [701 lignes]
+    │   └─ Interface complète HTML5/CSS/JS vanilla
+    │   └─ 4 sliders, fetch API, design moderne (gradients teal/indigo)
+    │   └─ Spinner de loading, barres de probabilité, gestion d'erreurs
+    │
+    └── nginx.conf
+        └─ Configuration serveur web (gzip, proxy, static files)
+
+================================================================================
+FICHIERS CRÉÉS: 8 fichiers complets
+================================================================================
+
+1. README.md (222 lignes)
+   - Objectif du projet et compétences visées
+   - Architecture globale
+   - Description détaillée des composants
+   - Instructions d'exécution (local + Docker)
+   - Endpoints API documentés
+   - Tâches étudiants (extensions)
+   - Dépannage complet
+
+2. backend/train_model.py (94 lignes)
+   - Load Iris dataset (scikit-learn)
+   - Train Random Forest (100 trees, max_depth=10)
+   - Train/test split (80/20)
+   - Évaluation: accuracy, classification report, confusion matrix
+   - Feature importance
+   - Sauvegarde en .pkl (joblib)
+
+3. backend/app.py (239 lignes)
+   - FastAPI application complète
+   - CORS enabled (allow_origins=["*"])
+   - Pydantic schemas avec validation (Field constraints)
+   - Événements startup/shutdown
+   - Endpoint GET /health → {status, model_loaded}
+   - Endpoint POST /predict → {prediction, probabilities}
+   - Gestion des erreurs HTTP
+   - Swagger/OpenAPI auto-généré (/docs)
+
+4. backend/requirements.txt
+   - fastapi==0.104.1
+   - uvicorn[standard]==0.24.0
+   - scikit-learn==1.3.2
+   - joblib==1.3.2
+   - pydantic==2.5.0
+   - python-multipart==0.0.6
+
+5. backend/Dockerfile
+   - Multi-stage build (builder + runtime)
+   - Python 3.11-slim
+   - Auto-training du modèle au startup
+   - Port 8000 exposé
+
+6. docker-compose.yml (52 lignes)
+   - Service backend: FastAPI + training
+   - Service frontend: nginx
+   - Network: iris-network
+   - Health checks configurés
+   - Labels EFREI
+
+7. frontend/index.html (701 lignes)
+   ✓ HTML5 sémantique
+   ✓ CSS moderne complet:
+     - Gradients linéaires (purple/blue)
+     - Flexbox et CSS Grid
+     - Animations smooth (slideIn, spin, pulse)
+     - Design cards avec shadows
+     - Responsive (mobile-friendly)
+   ✓ JavaScript vanilla (pas de dépendances):
+     - Event listeners sur sliders
+     - Fetch API pour appels POST
+     - Gestion des états (loading, error, results)
+     - Animation des barres de probabilité
+     - Vérification santé du backend
+
+8. frontend/nginx.conf
+   - Serveur HTTP sur port 80
+   - Gzip compression activée
+   - Static files serving
+   - Proxy vers backend (si besoin)
+   - Error handling (404→index.html)
+
+================================================================================
+FEATURES COMPLÈTES
+================================================================================
+
+✓ BACKEND:
+  • API REST avec documentation Swagger automatique
+  • Validation Pydantic (types, contraintes min/max)
+  • CORS pour les requêtes cross-origin
+  • Health checks
+  • Gestion des erreurs HTTP
+  • Logging structuré
+  • Entraînement du modèle au démarrage
+
+✓ FRONTEND:
+  • Interface responsive et moderne
+  • 4 sliders pour les inputs (min/max constraints)
+  • Affichage temps réel des valeurs
+  • Bouton de prédiction avec spinner
+  • Affichage élégant des résultats
+  • Barres de probabilité animées
+  • Gestion complète des erreurs
+  • Design hiérarchique avec sections
+  • Couleurs cohérentes (teal/indigo gradients)
+
+✓ DEPLOYMENT:
+  • Docker multi-conteneur orchestré
+  • Health checks automatiques
+  • Auto-restart policies
+  • Volumes pour développement
+  • Networks isolation
+
+================================================================================
+EXÉCUTION
+================================================================================
+
+LOCAL (sans Docker):
+  $ cd backend
+  $ pip install -r requirements.txt
+  $ python train_model.py
+  $ python app.py
+  
+  $ cd frontend
+  $ python -m http.server 5000
+
+DOCKER:
+  $ docker-compose up --build
+  Backend: http://localhost:8000
+  Frontend: http://localhost:5000
+  API Docs: http://localhost:8000/docs
+
+================================================================================
+
+================================================================================

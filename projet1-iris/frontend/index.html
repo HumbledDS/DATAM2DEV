@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prédicteur Iris - Classification de Fleurs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .card-content {
+            padding: 50px 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 25px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        .input-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .input-label label {
+            font-size: 0.95rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .input-value {
+            font-size: 1.1rem;
+            color: #667eea;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .slider-container {
+            position: relative;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .button-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 40px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px 32px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-predict {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-predict:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-predict:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-reset {
+            background: #f0f0f0;
+            color: #333;
+            flex: 0 1 auto;
+        }
+
+        .btn-reset:hover:not(:disabled) {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .results-container {
+            display: none;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            animation: slideIn 0.4s ease;
+        }
+
+        .results-container.show {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .prediction-box {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .prediction-label {
+            font-size: 0.85rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .prediction-value {
+            font-size: 2.5rem;
+            color: #667eea;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+
+        .probabilities {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .probability-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .probability-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .prob-label {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: capitalize;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .prob-bar-container {
+            background: #eee;
+            border-radius: 8px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .prob-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .prob-value {
+            font-size: 1rem;
+            color: #667eea;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .error-container {
+            display: none;
+            background: #fee;
+            border: 2px solid #f77;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            color: #c33;
+            animation: slideIn 0.4s ease;
+        }
+
+        .error-container.show {
+            display: block;
+        }
+
+        .error-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .error-message {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .info-text {
+            font-size: 0.85rem;
+            color: #999;
+            text-align: center;
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .card-content {
+                padding: 30px 20px;
+            }
+
+            .probabilities {
+                grid-template-columns: 1fr;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+
+            .btn-reset {
+                flex: 1;
+            }
+
+            .prediction-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1> Prédicteur Iris</h1>
+            <p>Classification automatique d'espèces de fleurs avec Machine Learning</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="main-card">
+            <div class="card-content">
+                <!-- Input Section -->
+                <div class="section">
+                    <div class="section-title">Caractéristiques de la Fleur</div>
+
+                    <!-- Sepal Length -->
+                    <div class="input-group">
+                        <div class="input-label">
+                            <label for="sepallength">Longueur du Sépale (cm)</label>
+                            <span class="input-value" id="value-sl">5.5</span>
+                        </div>
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="sepallength"
+                                name="sepallength"
+                                min="4.0"
+                                max="8.0"
+                                step="0.1"
+                                value="5.5"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Sepal Width -->
+                    <div class="input-group">
+                        <div class="input-label">
+                            <label for="sepalwidth">Largeur du Sépale (cm)</label>
+                            <span class="input-value" id="value-sw">3.5</span>
+                        </div>
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="sepalwidth"
+                                name="sepalwidth"
+                                min="2.0"
+                                max="4.5"
+                                step="0.1"
+                                value="3.5"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Petal Length -->
+                    <div class="input-group">
+                        <div class="input-label">
+                            <label for="petallength">Longueur du Pétale (cm)</label>
+                            <span class="input-value" id="value-pl">1.3</span>
+                        </div>
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="petallength"
+                                name="petallength"
+                                min="1.0"
+                                max="7.0"
+                                step="0.1"
+                                value="1.3"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Petal Width -->
+                    <div class="input-group">
+                        <div class="input-label">
+                            <label for="petalwidth">Largeur du Pétale (cm)</label>
+                            <span class="input-value" id="value-pw">0.3</span>
+                        </div>
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="petalwidth"
+                                name="petalwidth"
+                                min="0.1"
+                                max="2.5"
+                                step="0.1"
+                                value="0.3"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="button-container">
+                    <button class="btn btn-predict" id="predictBtn" onclick="predictIris()">
+                        <span id="btnText">Prédire</span>
+                    </button>
+                    <button class="btn btn-reset" id="resetBtn" onclick="resetForm()">
+                        Réinitialiser
+                    </button>
+                </div>
+
+                <p class="info-text">
+                    <span class="status-indicator"></span>
+                    Connecté au backend API
+                </p>
+
+                <!-- Results Container -->
+                <div class="results-container" id="resultsContainer">
+                    <!-- Prediction -->
+                    <div class="prediction-box">
+                        <div class="prediction-label">Espèce Prédite</div>
+                        <div class="prediction-value" id="predictionValue">-</div>
+                    </div>
+
+                    <!-- Probabilities -->
+                    <div class="section-title" style="margin-bottom: 20px;">Probabilités</div>
+                    <div class="probabilities" id="probabilitiesContainer">
+                        <!-- Rempli dynamiquement -->
+                    </div>
+                </div>
+
+                <!-- Error Container -->
+                <div class="error-container" id="errorContainer">
+                    <div class="error-title">⚠️ Erreur</div>
+                    <div class="error-message" id="errorMessage">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = 'http://localhost:8000';
+        const FEATURE_NAMES = ['setosa', 'versicolor', 'virginica'];
+
+        // ====================================================================
+        // Mise à jour des valeurs en temps réel
+        // ====================================================================
+
+        const sliders = {
+            'sepallength': 'value-sl',
+            'sepalwidth': 'value-sw',
+            'petallength': 'value-pl',
+            'petalwidth': 'value-pw'
+        };
+
+        Object.entries(sliders).forEach(([sliderId, displayId]) => {
+            const slider = document.getElementById(sliderId);
+            slider.addEventListener('input', function() {
+                document.getElementById(displayId).textContent = parseFloat(this.value).toFixed(1);
+            });
+        });
+
+        // ====================================================================
+        // Fonction de prédiction
+        // ====================================================================
+
+        async function predictIris() {
+            // Récupérer les valeurs
+            const sepalLength = parseFloat(document.getElementById('sepallength').value);
+            const sepalWidth = parseFloat(document.getElementById('sepalwidth').value);
+            const petalLength = parseFloat(document.getElementById('petallength').value);
+            const petalWidth = parseFloat(document.getElementById('petalwidth').value);
+
+            // Masquer les erreurs précédentes
+            hideError();
+
+            // Afficher le spinner et désactiver le bouton
+            showLoading();
+
+            try {
+                // Préparer la requête
+                const payload = {
+                    sepal_length: sepalLength,
+                    sepal_width: sepalWidth,
+                    petal_length: petalLength,
+                    petal_width: petalWidth
+                };
+
+                // Appeler l'API
+                const response = await fetch(`${API_URL}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                // Vérifier la réponse
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Erreur lors de la prédiction');
+                }
+
+                // Traiter le résultat
+                const result = await response.json();
+                displayResults(result);
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ====================================================================
+        // Affichage des résultats
+        // ====================================================================
+
+        function displayResults(result) {
+            // Afficher la prédiction
+            document.getElementById('predictionValue').textContent = result.prediction;
+
+            // Afficher les probabilités
+            const probContainer = document.getElementById('probabilitiesContainer');
+            probContainer.innerHTML = '';
+
+            Object.entries(result.probabilities).forEach(([className, probability]) => {
+                const percentage = (probability * 100).toFixed(1);
+
+                const item = document.createElement('div');
+                item.className = 'probability-item';
+                item.innerHTML = `
+                    <div class="prob-label">${className}</div>
+                    <div class="prob-bar-container">
+                        <div class="prob-bar" style="width: 0%;" id="bar-${className}"></div>
+                    </div>
+                    <div class="prob-value" id="value-${className}">0%</div>
+                `;
+                probContainer.appendChild(item);
+
+                // Animation de la barre
+                setTimeout(() => {
+                    document.getElementById(`bar-${className}`).style.width = percentage + '%';
+                    document.getElementById(`value-${className}`).textContent = percentage + '%';
+                }, 50);
+            });
+
+            // Afficher le conteneur de résultats
+            document.getElementById('resultsContainer').classList.add('show');
+        }
+
+        // ====================================================================
+        // Gestion des états de chargement et erreurs
+        // ====================================================================
+
+        function showLoading() {
+            const btn = document.getElementById('predictBtn');
+            const btnText = document.getElementById('btnText');
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span>Prédiction...';
+        }
+
+        function hideLoading() {
+            const btn = document.getElementById('predictBtn');
+            const btnText = document.getElementById('btnText');
+            btn.disabled = false;
+            btnText.innerHTML = 'Prédire';
+        }
+
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorContainer.classList.add('show');
+        }
+
+        function hideError() {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.classList.remove('show');
+        }
+
+        // ====================================================================
+        // Réinitialisation du formulaire
+        // ====================================================================
+
+        function resetForm() {
+            // Réinitialiser les sliders
+            document.getElementById('sepallength').value = 5.5;
+            document.getElementById('sepalwidth').value = 3.5;
+            document.getElementById('petallength').value = 1.3;
+            document.getElementById('petalwidth').value = 0.3;
+
+            // Réinitialiser les affichages de valeurs
+            document.getElementById('value-sl').textContent = '5.5';
+            document.getElementById('value-sw').textContent = '3.5';
+            document.getElementById('value-pl').textContent = '1.3';
+            document.getElementById('value-pw').textContent = '0.3';
+
+            // Cacher les résultats et erreurs
+            document.getElementById('resultsContainer').classList.remove('show');
+            hideError();
+        }
+
+        // ====================================================================
+        // Vérifier la connexion au backend au chargement
+        // ====================================================================
+
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                if (!response.ok) {
+                    console.warn('Backend non disponible');
+                    showError('Impossible de se connecter au backend API. Assurez-vous qu\'il est démarré sur http://localhost:8000');
+                }
+            } catch (error) {
+                console.error('Erreur de connexion:', error);
+                showError('Erreur de connexion au backend API. Vérifiez que http://localhost:8000 est accessible.');
+            }
+        });
+    </script>
+</body>
+</html>
